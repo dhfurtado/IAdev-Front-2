@@ -17,7 +17,7 @@ $w.onReady(function () {
             let senha = $w("#input6") ? $w("#input6").value : "";
             let confirmarSenha = $w("#input7") ? $w("#input7").value : "";
             //@ts-ignore
-            let nomedaempressa = $w("#input8") ? $w("#input8"). value : "";
+            let nomedaempresa = $w("#input8") ? $w("#input8"). value : "";
 
             // Remove caracteres não numéricos do telefone
             let telefoneFormatado = telefone.replace(/\D/g, "");
@@ -37,7 +37,8 @@ $w.onReady(function () {
                 sobrenome,
                 telefone: telefoneFormatado,
                 email,
-                senha
+                senha,
+                nomedaempresa
             };
 
             console.log("Enviando dados para o N8N...", dadosLead);
