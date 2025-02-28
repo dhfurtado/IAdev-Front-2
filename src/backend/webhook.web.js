@@ -1,28 +1,55 @@
-/************
-.web.js file
-************
+import { ok, badRequest } from "wix-http-functions";
+import { fetch } from "wix-fetch";
 
-Backend '.web.js' files contain functions that run on the server side and can be called from page code.
+/**
+ * Envia os dados do lead para o PostgreSQL e para o N8N
+ * @param {object} request - Requisição HTTP recebida do formulário.
+ * @returns {object} - Resposta HTTP.
+ */
+export async function post_webhook(request) {
+    try {
+        if (!request.body) {
+            return badRequest({ body: { error: "Request body vazio." } });
+        }
 
-Learn more at https://dev.wix.com/docs/develop-websites/articles/coding-with-velo/backend-code/web-modules/calling-backend-code-from-the-frontend
+        const item = await request.body.json();
+        console.log("📩 Dados recebidos:", item);
 
-****/
+        // Normaliza o telefone
+        let telefoneFormatado = item.telefone.replace(/\D/g, "");
 
-/**** Call the sample multiply function below by pasting the following into your page code:
+        // Monta o objeto de dados
+        const dadosLead = {
+            nome: item.nome,
+            sobrenome: item.sobrenome,
+            empresa: item.empresa,
+            telefone: telefoneFormatado,
+            email: item.email || ""
+        };
 
-import { multiply } from 'backend/new-module.web';
+        console.log("🚀 Enviando dados para PostgreSQL e N8N:", dadosLead);
 
-$w.onReady(async function () {
-   console.log(await multiply(4,5));
-});
+        // 1️⃣ Envia os dados para o PostgreSQL
+        await fetch("https://seu-servidor-postgres.com/api/inserir-lead", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dadosLead)
+        });
 
-****/
+        // 2️⃣ Envia os dados para o N8N (para iniciar a automação)
+        await fetch("https://srdiadev-n8n-webhook.8qlb9b.easypanel.host/webhook/ac5fb9cb-fba8-418c-8fae-c77723df6230", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dadosLead)
+        });
 
-import { Permissions, webMethod } from "wix-web-module";
+        console.log("✅ Dados enviados com sucesso!");
 
-export const multiply = webMethod(
-  Permissions.Anyone, 
-  (factor1, factor2) => { 
-    return factor1 * factor2 
-  }
-);
+        // 3️⃣ Retorna sucesso e indica para o frontend redirecionar o usuário
+        return ok({ body: { message: "Dados cadastrados!", redirectUrl: "/pagina-principal" } });
+
+    } catch (error) {
+        console.error("❌ Erro ao enviar dados:", error);
+        return badRequest({ body: { error: "Erro na requisição.", details: error.message } });
+    }
+}
